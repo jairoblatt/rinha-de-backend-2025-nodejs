@@ -21,6 +21,7 @@ interface PaymentData {
 
 export const processPaymentWorker = new Worker("payment", processPayment, {
   connection: redisConfig,
+  concurrency: 4,
 });
 
 function createPaymentData(jobData: PaymentJobData) {
