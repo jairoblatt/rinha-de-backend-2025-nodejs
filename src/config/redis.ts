@@ -3,8 +3,7 @@ import { ConnectionOptions } from "bullmq";
 import { config } from "@/config";
 
 export const redisConfig: ConnectionOptions = {
-  host: config.RedisHost,
-  port: config.RedisPort,
+  path: config.RedisSocketPath,
 };
 
 export const redisClient = new Redis(redisConfig);

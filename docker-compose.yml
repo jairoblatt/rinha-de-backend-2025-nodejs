@@ -3,6 +3,11 @@ services:
     build: .
     container_name: api1
     hostname: api1
+    environment:
+      - SOCKET_PATH=/tmp/api1.sock
+      - HEALTH_CHECK_INTERVAL=5100
+      - HEALTH_CHECK_SOURCE_REDIS=false
+      - REDIS_SOCKET_PATH=/tmp/redis.sock
     volumes:
       - rb2025:/tmp/
     networks:
@@ -18,6 +23,11 @@ services:
     build: .
     container_name: api2
     hostname: api2
+    environment:
+      - SOCKET_PATH=/tmp/api2.sock
+      - HEALTH_CHECK_INTERVAL=5300
+      - HEALTH_CHECK_SOURCE_REDIS=true
+      - REDIS_SOCKET_PATH=/tmp/redis.sock
     volumes:
       - rb2025:/tmp/
     networks:
@@ -69,13 +79,19 @@ services:
           memory: 40MB
 
   redis:
-    image: redis:latest
+    image: redis:7-alpine
+    container_name: redis
+    hostname: redis
+    command: redis-server --unixsocket /tmp/redis.sock --maxmemory 45mb --maxmemory-policy allkeys-lru --save "" --appendonly no --timeout 0
+    volumes:
+      - rb2025
     networks:
       - payment-processor
-    ports:
-      - "6379:6379"
-    volumes:
-      - rb2025:/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: "55MB"
 
 volumes:
   rb2025:
