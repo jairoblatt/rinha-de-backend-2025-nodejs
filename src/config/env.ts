@@ -1,14 +1,17 @@
-import dotenv from "dotenv";
-import fs from "fs";
-import { isDev } from "@/shared";
-
-if (isDev) {
-  const envFile = ".env";
-
-  if (!fs.existsSync(envFile)) {
-    console.error(`File ${envFile} was not found.`);
-  }
-
-  dotenv.config({ path: envFile });
-  console.log(`Environment variables loaded from ${envFile}`);
+interface Config {
+  SocketPath: string;
+  HealthCheckInterval: number;
+  HealthCheckSourceRedis: boolean;
+  RedisHost: string;
+  RedisPort: number;
 }
+
+const config: Config = {
+  SocketPath: process.env.SOCKET_PATH || "/tmp/app.sock",
+  HealthCheckInterval: Number(process.env.HEALTH_CHECK_INTERVAL) || 5_000,
+  HealthCheckSourceRedis: process.env.HEALTH_CHECK_SOURCE_REDIS === "true" || false,
+  RedisHost: process.env.REDIS_HOST || "127.0.0.1",
+  RedisPort: Number(process.env.REDIS_PORT) || 6379,
+};
+
+export { config };

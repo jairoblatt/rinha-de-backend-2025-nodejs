@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/main.js",
   "scripts": {
-    "start:dev": "nodemon --watch src --exec cross-env NODE_ENV=development ts-node -r tsconfig-paths/register src/main.ts",
+    "start:dev": "nodemon --watch src NODE_ENV=development ts-node -r tsconfig-paths/register src/main.ts",
     "build": "tsc && tsc-alias"
   },
   "keywords": [],
@@ -12,8 +12,6 @@
   "description": "",
   "dependencies": {
     "bullmq": "^5.56.5",
-    "cross-env": "^7.0.3",
-    "dotenv": "^17.2.0",
     "ioredis": "^5.6.1",
     "undici": "^7.12.0"
   },
