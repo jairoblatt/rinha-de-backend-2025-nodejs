@@ -11,7 +11,7 @@ export function sendReponse(res: ServerResponse, statusCode: number, data?: obje
     "content-type": "application/json",
   });
 
-  res.end(JSON.stringify(data));
+  res.end(data ? JSON.stringify(data): "");
 }
 
 export function readBody<T extends object>(req: IncomingMessage): Promise<T> {
