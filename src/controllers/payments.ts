@@ -7,20 +7,12 @@ interface PaymentBody {
   amount: number;
 }
 
-export async function paymentsController(
-  req: IncomingMessage,
-  res: ServerResponse
-) {
+export async function paymentsController(req: IncomingMessage, res: ServerResponse) {
   try {
     const body = await httpUtils.readBody<PaymentBody>(req);
-
     await addPaymentJob(body);
-
-    console.log(body);
-
     httpUtils.sendReponse(res, httpUtils.HttpStatus.OK);
-  } catch (error) {
-    console.log("Error processing payment:", error);
+  } catch {
     httpUtils.sendReponse(res, httpUtils.HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

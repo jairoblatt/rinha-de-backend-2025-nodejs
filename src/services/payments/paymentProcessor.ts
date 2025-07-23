@@ -16,19 +16,26 @@ export interface CheckHealthResponse {
   minResponseTime: number;
 }
 
-function paymentProcessorService(baseUrl: string) {
+export const enum PaymentProcessor {
+  Default = 1,
+  Fallback = 2,
+}
+
+function paymentProcessorService(paymentProcessor: PaymentProcessor) {
   const defaultHeaders = {
     "Content-Type": "application/json",
   };
 
+  const baseUrl = {
+    [PaymentProcessor.Default]: "http://payment-processor-default:8080",
+    [PaymentProcessor.Fallback]: "http://payment-processor-fallback:8080",
+  }[paymentProcessor];
+
   const checkHealth = async (): Promise<ResponseBase<CheckHealthResponse>> => {
-    const { body, statusCode } = await request(
-      `${baseUrl}/payments/service-health`,
-      {
-        method: "GET",
-        headers: defaultHeaders,
-      }
-    );
+    const { body, statusCode } = await request(`${baseUrl}/payments/service-health`, {
+      method: "GET",
+      headers: defaultHeaders,
+    });
 
     const resp = await body.json();
 
@@ -57,10 +64,5 @@ function paymentProcessorService(baseUrl: string) {
   };
 }
 
-export const paymentProcessorDefault = paymentProcessorService(
-  "http://payment-processor-default:8080"
-);
-
-export const paymentProcessorFallback = paymentProcessorService(
-  "http://payment-processor-fallback:8080"
-);
+export const paymentProcessorDefault = paymentProcessorService(PaymentProcessor.Default);
+export const paymentProcessorFallback = paymentProcessorService(PaymentProcessor.Fallback);

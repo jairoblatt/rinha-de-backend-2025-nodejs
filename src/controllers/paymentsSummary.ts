@@ -1,23 +1,18 @@
 import { httpUtils } from "@/shared";
+import { paymentSummaryService } from "@/services";
 import type { ServerResponse, IncomingMessage } from "http";
 
-interface PaymentBody {
-  correlationId: string;
-  amount: number;
+interface PaymentSummaryQuery {
+  to: string | null;
+  from: string | null;
 }
 
-export async function paymentsSummaryController(
-  req: IncomingMessage,
-  res: ServerResponse
-) {
+export async function paymentsSummaryController(req: IncomingMessage, res: ServerResponse) {
   try {
-    const query = httpUtils.readQueryParams(req);
-
-    console.log(query);
-
-    httpUtils.sendReponse(res, httpUtils.HttpStatus.OK);
+    const { from = null, to = null } = (httpUtils.readQueryParams(req) || {}) as unknown as PaymentSummaryQuery;
+    const result = await paymentSummaryService(from, to);
+    httpUtils.sendReponse(res, httpUtils.HttpStatus.OK, result);
   } catch {
-    console.log("Error processing request");
     httpUtils.sendReponse(res, httpUtils.HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

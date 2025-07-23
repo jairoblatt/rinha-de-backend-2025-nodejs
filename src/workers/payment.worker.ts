@@ -1,9 +1,11 @@
 import { Worker, type Job } from "bullmq";
-import { redisClient, redisConfig } from "../config/redis";
+import { redisConfig } from "../config/redis";
 import {
+  PaymentProcessor,
   paymentProcessorDefault,
   paymentProcessorFallback,
 } from "@/services/payments/paymentProcessor";
+import { RedisPaymentsService } from "@/services/redis";
 import { appState } from "../state";
 
 interface PaymentJobData {
@@ -30,10 +32,7 @@ function createPaymentData(jobData: PaymentJobData) {
 }
 
 function shouldUseDefault(): boolean {
-  return (
-    !appState.ppHealthDefault.failing &&
-    appState.ppHealthDefault.minResponseTime < 500
-  );
+  return !appState.ppHealthDefault.failing && appState.ppHealthDefault.minResponseTime < 500;
 }
 
 async function processWithDefault(data: PaymentData): Promise<void> {
@@ -42,6 +41,11 @@ async function processWithDefault(data: PaymentData): Promise<void> {
   if (statusCode !== 200) {
     throw new Error("Default processor failed");
   }
+
+  await RedisPaymentsService.push({
+    ...data,
+    paymentProcessor: PaymentProcessor.Default,
+  });
 }
 
 async function processWithFallback(data: PaymentData): Promise<void> {
@@ -50,14 +54,15 @@ async function processWithFallback(data: PaymentData): Promise<void> {
   if (statusCode !== 200) {
     throw new Error("Fallback processor failed");
   }
+
+  await RedisPaymentsService.push({
+    ...data,
+    paymentProcessor: PaymentProcessor.Fallback,
+  });
 }
 
 async function processPayment(job: Job<PaymentJobData>): Promise<void> {
   const paymentData = createPaymentData(job.data);
 
-  shouldUseDefault()
-    ? await processWithDefault(paymentData)
-    : await processWithFallback(paymentData);
-
-  await redisClient.lpush(JSON.stringify(paymentData));
+  shouldUseDefault() ? await processWithDefault(paymentData) : await processWithFallback(paymentData);
 }

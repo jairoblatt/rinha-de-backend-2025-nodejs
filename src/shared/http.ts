@@ -6,12 +6,12 @@ export enum HttpStatus {
   INTERNAL_SERVER_ERROR = 500,
 }
 
-export function sendReponse(res: ServerResponse, statusCode: number) {
+export function sendReponse(res: ServerResponse, statusCode: number, data?: object) {
   res.writeHead(statusCode, {
     "content-type": "application/json",
   });
 
-  res.end();
+  res.end(JSON.stringify(data));
 }
 
 export function readBody<T extends object>(req: IncomingMessage): Promise<T> {
