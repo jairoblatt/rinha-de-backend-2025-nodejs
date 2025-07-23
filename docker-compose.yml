@@ -1,0 +1,87 @@
+services:
+  api1:
+    build: .
+    container_name: api1
+    hostname: api1
+    volumes:
+      - rb2025:/tmp/
+    networks:
+      - payment-processor
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.65"
+          memory: 155MB
+
+  api2:
+    build: .
+    container_name: api2
+    hostname: api2
+    volumes:
+      - rb2025:/tmp/
+    networks:
+      - payment-processor
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.65"
+          memory: 155MB
+
+  # loadbalancer:
+  #   image: loadbalancer
+  #   container_name: loadbalancer
+  #   hostname: ld
+  #   ports:
+  #     - "9999:9999"
+  #   environment:
+  #     - LB_LISTEN_PORT=9999
+  #     - LB_BACKENDS=/tmp/api1.sock,/tmp/api2.sock
+  #     - LB_ASYNC_PATHS=/payments:200
+  #   networks:
+  #     - payment-processor
+  #   volumes:
+  #     - rb2025:/tmp/
+  #   depends_on:
+  #     - api1
+  #     - api2
+  #   restart: unless-stopped
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "9999:9999"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - rb2025:/tmp/
+    depends_on:
+      - api1
+      - api2
+    networks:
+      - payment-processor
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 40MB
+
+  redis:
+    image: redis:latest
+    networks:
+      - payment-processor
+    ports:
+      - "6379:6379"
+    volumes:
+      - rb2025:/data
+
+volumes:
+  rb2025:
+    driver: local
+
+networks:
+  payment-processor:
+    external: true
+    driver: bridge
