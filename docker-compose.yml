@@ -12,6 +12,8 @@ services:
       - rb2025:/tmp/
     networks:
       - payment-processor
+    depends_on:
+      - redis
     restart: unless-stopped
     deploy:
       resources:
@@ -32,6 +34,8 @@ services:
       - rb2025:/tmp/
     networks:
       - payment-processor
+    depends_on:
+      - redis
     restart: unless-stopped
     deploy:
       resources:
@@ -82,9 +86,9 @@ services:
     image: redis:7-alpine
     container_name: redis
     hostname: redis
-    command: redis-server --unixsocket /tmp/redis.sock --maxmemory 45mb --maxmemory-policy allkeys-lru --save "" --appendonly no --timeout 0
+    command: redis-server --unixsocket /tmp/redis.sock --unixsocketperm 777 --maxmemory 45mb --maxmemory-policy allkeys-lru --save "" --appendonly no --timeout 0
     volumes:
-      - rb2025
+      - rb2025:/tmp/
     networks:
       - payment-processor
     deploy:
