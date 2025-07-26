@@ -14,6 +14,29 @@ export function sendReponse(res: ServerResponse, statusCode: number, data?: obje
   res.end(data ? JSON.stringify(data) : "");
 }
 
+export function readBodyBufferCallback<T extends object>(
+  req: IncomingMessage,
+  cb: (err: Error | null, body?: T) => void
+) {
+  const chunks: Buffer[] = [];
+
+  req.on("data", (chunk) => {
+    chunks.push(chunk);
+  });
+
+  req.on("end", () => {
+    try {
+      const body = Buffer.concat(chunks).toString();
+      const parsedBody = JSON.parse(body);
+      cb(null, parsedBody);
+    } catch {
+      cb(new Error("Invalid JSON format"));
+    }
+  });
+
+  req.on("error", (err) => cb(err));
+}
+
 export function readBody<T extends object>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
     let body: string = "";

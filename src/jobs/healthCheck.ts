@@ -9,6 +9,13 @@ interface StartHealthChecker extends BasicCronJobOptions {
 
 export function startHealthChecker({ appState, sourceRedis, ...cronjobOptions }: StartHealthChecker) {
   return basicCronJob(async () => {
-    sourceRedis ? await checkAndUpdateRedis(appState) : await checkAndUpdateDefault(appState);
+    await healthCheckerHandler({ appState, sourceRedis });
   }, cronjobOptions);
+}
+
+export async function healthCheckerHandler({
+  appState,
+  sourceRedis,
+}: Pick<StartHealthChecker, "appState" | "sourceRedis">) {
+  sourceRedis ? await checkAndUpdateRedis(appState) : await checkAndUpdateDefault(appState);
 }

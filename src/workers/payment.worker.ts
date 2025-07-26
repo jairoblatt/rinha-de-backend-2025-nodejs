@@ -1,12 +1,8 @@
-import { Worker, type Job } from "bullmq";
-import { redisConfig } from "../config/redis";
 import {
   PaymentProcessor,
   paymentProcessorDefault,
   paymentProcessorFallback,
 } from "@/services/payments/paymentProcessor";
-import { RedisPaymentsService } from "@/services/redis";
-import { appState } from "../state";
 
 interface PaymentJobData {
   amount: number;
@@ -19,11 +15,6 @@ interface PaymentData {
   correlationId: string;
 }
 
-export const processPaymentWorker = new Worker("payment", processPayment, {
-  connection: redisConfig,
-  concurrency: 4,
-});
-
 function createPaymentData(jobData: PaymentJobData) {
   return {
     amount: jobData.amount,
@@ -32,38 +23,34 @@ function createPaymentData(jobData: PaymentJobData) {
   };
 }
 
-function shouldUseDefault(): boolean {
-  return !appState.ppHealthDefault.failing && appState.ppHealthDefault.minResponseTime < 500;
-}
-
-async function processWithDefault(data: PaymentData): Promise<void> {
+async function processWithDefault(data: PaymentData) {
   const { statusCode } = await paymentProcessorDefault.payment(data);
 
   if (statusCode !== 200) {
     throw new Error("Default processor failed");
   }
 
-  await RedisPaymentsService.push({
+  return {
     ...data,
     paymentProcessor: PaymentProcessor.Default,
-  });
+  };
 }
 
-async function processWithFallback(data: PaymentData): Promise<void> {
+async function processWithFallback(data: PaymentData) {
   const { statusCode } = await paymentProcessorFallback.payment(data);
 
   if (statusCode !== 200) {
     throw new Error("Fallback processor failed");
   }
 
-  await RedisPaymentsService.push({
+  return {
     ...data,
     paymentProcessor: PaymentProcessor.Fallback,
-  });
+  };
 }
 
-async function processPayment(job: Job<PaymentJobData>): Promise<void> {
-  const paymentData = createPaymentData(job.data);
+export async function processPayment(data: any, shouldUseDefault: boolean) {
+  const paymentData = createPaymentData(data);
 
-  shouldUseDefault() ? await processWithDefault(paymentData) : await processWithFallback(paymentData);
+  return shouldUseDefault ? await processWithDefault(paymentData) : await processWithFallback(paymentData);
 }

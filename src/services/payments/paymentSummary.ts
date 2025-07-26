@@ -25,44 +25,31 @@ export async function paymentSummaryService(from: string | null, to: string | nu
 
   const data = await RedisPaymentsService.list();
 
-  const fromTimestamp = convertToTimeStamp(from!);
-  const toTimestamp = convertToTimeStamp(to!);
-
-  const shouldFilterByDate = fromTimestamp && toTimestamp;
+  const fromTimestamp = convertToTimeStamp(from);
+  const toTimestamp = convertToTimeStamp(to);
 
   for (const item of data) {
-    if (!shouldFilterByDate) {
-      continue;
-    }
-
     const requestedAtTimestamp = convertToTimeStamp(item.requestedAt);
+    if (requestedAtTimestamp === null) continue;
 
-    if (!requestedAtTimestamp) {
-      continue;
-    }
+    const isOutOfRange =
+      (fromTimestamp !== null && requestedAtTimestamp < fromTimestamp) ||
+      (toTimestamp !== null && requestedAtTimestamp > toTimestamp);
 
-    if (requestedAtTimestamp < fromTimestamp || requestedAtTimestamp > toTimestamp) {
-      continue;
-    }
+    if (isOutOfRange) continue;
 
-    if (item.paymentProcessor === PaymentProcessor.Default) {
-      paymentSummary.default.total_requests += 1;
-      paymentSummary.default.total_amount += item.amount;
-      continue;
-    }
+    const summary =
+      item.paymentProcessor === PaymentProcessor.Default ? paymentSummary.default : paymentSummary.fallback;
 
-    paymentSummary.fallback.total_requests += 1;
-    paymentSummary.fallback.total_amount += item.amount;
+    summary.total_requests += 1;
+    summary.total_amount += item.amount;
   }
 
   return paymentSummary;
 }
 
-function convertToTimeStamp(date: string): number | null {
-  try {
-    const _date = new Date(date);
-    return _date.getTime();
-  } catch {
-    return null;
-  }
+function convertToTimeStamp(date: string | null): number | null {
+  if (!date) return null;
+  const timestamp = new Date(date).getTime();
+  return isNaN(timestamp) ? null : timestamp;
 }

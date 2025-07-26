@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-    "target": "ES6",
+    "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "node",
     "resolveJsonModule": true,
