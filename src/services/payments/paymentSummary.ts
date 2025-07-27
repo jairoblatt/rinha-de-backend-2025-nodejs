@@ -28,14 +28,14 @@ export async function paymentSummaryService(
     fallback: processState(stateFallback, fromTimestamp, toTimestamp),
   };
 
-  if (!localOnly) {
-    const foreignState = await getForeignState(from, to);
-    paymentSummary.default.totalAmount += foreignState.default.totalAmount;
-    paymentSummary.default.totalRequests += foreignState.default.totalRequests;
+  // if (!localOnly) {
+  //   const foreignState = await getForeignState(from, to);
+  //   paymentSummary.default.totalAmount += foreignState.default.totalAmount;
+  //   paymentSummary.default.totalRequests += foreignState.default.totalRequests;
 
-    paymentSummary.fallback.totalAmount += foreignState.fallback.totalAmount;
-    paymentSummary.fallback.totalRequests += foreignState.fallback.totalRequests;
-  }
+  //   paymentSummary.fallback.totalAmount += foreignState.fallback.totalAmount;
+  //   paymentSummary.fallback.totalRequests += foreignState.fallback.totalRequests;
+  // }
 
   return {
     default: {
@@ -55,7 +55,11 @@ function convertToTimeStamp(date: string | null): number | null {
   return isNaN(timestamp) ? null : timestamp;
 }
 
-function processState(data: StorageEntry[], fromTimestamp: number | null, toTimestamp: number | null): PaymentSummary {
+function processState(
+  data: StorageEntry[],
+  fromTimestamp: number | null,
+  toTimestamp: number | null
+): PaymentSummary {
   const summary: PaymentSummary = {
     totalRequests: 0,
     totalAmount: 0,
@@ -67,8 +71,8 @@ function processState(data: StorageEntry[], fromTimestamp: number | null, toTime
     }
 
     const isOutOfRange =
-      (fromTimestamp !== null && item.requestedAt < fromTimestamp) ||
-      (toTimestamp !== null && item.requestedAt > toTimestamp);
+      (fromTimestamp !== null && convertToTimeStamp(item.requestedAt)! < fromTimestamp) ||
+      (toTimestamp !== null && convertToTimeStamp(item.requestedAt)! > toTimestamp);
 
     if (isOutOfRange) {
       continue;

@@ -13,17 +13,18 @@ const responses = [
 ];
 const port = parentPort!;
 
-port.on("message", ({ payload }) => {
-  paymentCircuitBreaker
-    .execute(payload)
-    .then((result) => {
-      responses[0].payload = result;
-      port.postMessage(responses[0]);
-      responses[0].payload = null;
-    })
-    .catch(() => {
-      responses[1].payload = payload;
-      port.postMessage(responses[1]);
-      responses[1].payload = null;
+port.on("message", async ({ payload }) => {
+  try {
+    const result = await paymentCircuitBreaker.execute(payload);
+
+    port.postMessage({
+      payload: result,
+      state: "fulfilled",
     });
+  } catch (error) {
+    port.postMessage({
+      payload,
+      state: "rejected",
+    });
+  }
 });

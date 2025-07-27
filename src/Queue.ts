@@ -91,7 +91,8 @@ export class Queue {
 
     switch (state) {
       case "fulfilled":
-        this.setResultState(appState, payload);
+        await RedisPaymentsService.push(payload);
+        // this.setResultState(appState, payload);
         break;
       case "rejected":
         this.queue[this.tail++] = payload;
@@ -107,14 +108,14 @@ export class Queue {
 
   private setResultState(state: State, message: PaymentDataResponse) {
     const amount = floatToCents(message.amount);
-    const requestedAt = new Date(message.requestedAt).getTime();
+    // const requestedAt = new Date(message.requestedAt).getTime();
 
     switch (message.paymentProcessor) {
       case PaymentProcessor.Default:
-        state.default.push(amount, requestedAt);
+        state.default.push(amount, message.requestedAt);
         break;
       case PaymentProcessor.Fallback:
-        state.fallback.push(amount, requestedAt);
+        state.fallback.push(amount, message.requestedAt);
         break;
     }
   }

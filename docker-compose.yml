@@ -16,11 +16,11 @@ services:
     depends_on:
       - redis
     # restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: "0.65"
-          memory: 155MB
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "0.65"
+    #       memory: 155MB
 
   api2:
     build: .
@@ -39,11 +39,11 @@ services:
     depends_on:
       - redis
     # restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: "0.65"
-          memory: 155MB
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "0.65"
+    #       memory: 155MB
 
   # loadbalancer:
   #   image: loadbalancer
