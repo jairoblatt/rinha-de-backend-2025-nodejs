@@ -1,55 +1,82 @@
-import { RedisPaymentsService } from "@/services/redis";
-import { PaymentProcessor } from "./paymentProcessor";
+import { centsToFloat } from "@/shared";
+import state, { type StorageEntry } from "@/state";
+import { getForeignState } from "./ForeignState";
 
 interface PaymentSummary {
   totalRequests: number;
   totalAmount: number;
 }
 
-interface PaymentSummaryResponse {
+export interface PaymentSummaryResponse {
   default: PaymentSummary;
   fallback: PaymentSummary;
 }
 
-export async function paymentSummaryService(from: string | null, to: string | null): Promise<PaymentSummaryResponse> {
+export async function paymentSummaryService(
+  from: string | null,
+  to: string | null,
+  localOnly: boolean
+): Promise<PaymentSummaryResponse> {
+  const stateDefault = state.default.list();
+  const stateFallback = state.fallback.list();
+
+  const toTimestamp = convertToTimeStamp(to);
+  const fromTimestamp = convertToTimeStamp(from);
+
   const paymentSummary: PaymentSummaryResponse = {
-    default: {
-      totalRequests: 0,
-      totalAmount: 0,
-    },
-    fallback: {
-      totalRequests: 0,
-      totalAmount: 0,
-    },
+    default: processState(stateDefault, fromTimestamp, toTimestamp),
+    fallback: processState(stateFallback, fromTimestamp, toTimestamp),
   };
 
-  const data = await RedisPaymentsService.list();
+  if (!localOnly) {
+    const foreignState = await getForeignState(from, to);
+    paymentSummary.default.totalAmount += foreignState.default.totalAmount;
+    paymentSummary.default.totalRequests += foreignState.default.totalRequests;
 
-  const fromTimestamp = convertToTimeStamp(from);
-  const toTimestamp = convertToTimeStamp(to);
-
-  for (const item of data) {
-    const requestedAtTimestamp = convertToTimeStamp(item.requestedAt);
-    if (requestedAtTimestamp === null) continue;
-
-    const isOutOfRange =
-      (fromTimestamp !== null && requestedAtTimestamp < fromTimestamp) ||
-      (toTimestamp !== null && requestedAtTimestamp > toTimestamp);
-
-    if (isOutOfRange) continue;
-
-    const summary =
-      item.paymentProcessor === PaymentProcessor.Default ? paymentSummary.default : paymentSummary.fallback;
-
-    summary.totalRequests += 1;
-    summary.totalAmount += item.amount;
+    paymentSummary.fallback.totalAmount += foreignState.fallback.totalAmount;
+    paymentSummary.fallback.totalRequests += foreignState.fallback.totalRequests;
   }
 
-  return paymentSummary;
+  return {
+    default: {
+      totalRequests: paymentSummary.default.totalRequests,
+      totalAmount: centsToFloat(paymentSummary.default.totalAmount),
+    },
+    fallback: {
+      totalRequests: paymentSummary.fallback.totalRequests,
+      totalAmount: centsToFloat(paymentSummary.fallback.totalAmount),
+    },
+  };
 }
 
 function convertToTimeStamp(date: string | null): number | null {
   if (!date) return null;
   const timestamp = new Date(date).getTime();
   return isNaN(timestamp) ? null : timestamp;
+}
+
+function processState(data: StorageEntry[], fromTimestamp: number | null, toTimestamp: number | null): PaymentSummary {
+  const summary: PaymentSummary = {
+    totalRequests: 0,
+    totalAmount: 0,
+  };
+
+  for (const item of data) {
+    if (item.requestedAt === null) {
+      continue;
+    }
+
+    const isOutOfRange =
+      (fromTimestamp !== null && item.requestedAt < fromTimestamp) ||
+      (toTimestamp !== null && item.requestedAt > toTimestamp);
+
+    if (isOutOfRange) {
+      continue;
+    }
+
+    summary.totalRequests += 1;
+    summary.totalAmount += item.amount;
+  }
+
+  return summary;
 }

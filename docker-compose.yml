@@ -8,6 +8,7 @@ services:
       - HEALTH_CHECK_INTERVAL=5100
       - HEALTH_CHECK_SOURCE_REDIS=false
       - REDIS_SOCKET_PATH=/tmp/redis.sock
+      - FOREIGN_STATE=api2
     volumes:
       - rb2025:/tmp/
     networks:
@@ -30,6 +31,7 @@ services:
       - HEALTH_CHECK_INTERVAL=5300
       - HEALTH_CHECK_SOURCE_REDIS=true
       - REDIS_SOCKET_PATH=/tmp/redis.sock
+      - FOREIGN_STATE=api1
     volumes:
       - rb2025:/tmp/
     networks:
@@ -72,7 +74,7 @@ services:
       - rb2025:/tmp/
     depends_on:
       - api1
-      - api2
+      # - api2
     networks:
       - payment-processor
     restart: unless-stopped

@@ -10,10 +10,14 @@ interface PaymentJobData {
   correlationId: string;
 }
 
-interface PaymentData {
+export interface PaymentData {
   requestedAt: string;
   amount: number;
   correlationId: string;
+}
+
+export interface PaymentDataResponse extends PaymentData {
+  paymentProcessor: PaymentProcessor;
 }
 
 function createPaymentData(jobData: PaymentJobData) {

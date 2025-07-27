@@ -1,6 +1,7 @@
 import { Queue } from "../Queue";
+import state from "../state";
 
-const queue = new Queue({
+const queue = new Queue(state, {
   workers: 2,
 });
 

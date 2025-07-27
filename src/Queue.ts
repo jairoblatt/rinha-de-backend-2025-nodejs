@@ -1,6 +1,10 @@
 import { resolve } from "node:path";
 import { Worker } from "node:worker_threads";
 import { RedisPaymentsService } from "@/services/redis";
+import { PaymentProcessor } from "@/services/payments/paymentProcessor";
+import { floatToCents } from "@/shared";
+import type { State } from "./state";
+import type { PaymentDataResponse } from "./workers/payment.worker";
 
 export interface QueueMessage {
   amount: number;
@@ -18,7 +22,7 @@ export class Queue {
   private readonly workersFns: ((message: any) => void)[] = [];
   private readonly workersIdle: number[] = [];
 
-  constructor(readonly queueOptions: QueueOptions) {
+  constructor(readonly state: State, readonly queueOptions: QueueOptions) {
     const isFileTs = __filename.endsWith(".ts");
     const workerPath = resolve(__dirname, isFileTs ? "worker.ts" : "worker.js");
 
@@ -27,7 +31,7 @@ export class Queue {
       this.workersIdle.push(i);
       this.workersFns.push((message) => worker.postMessage(message));
 
-      worker.on("message", (message) => this.onWorkerMessage(i, message));
+      worker.on("message", (message) => this.onWorkerMessage(i, message, state));
     }
   }
 
@@ -82,12 +86,12 @@ export class Queue {
     });
   }
 
-  private async onWorkerMessage(workerIndex: number, message: any) {
+  private async onWorkerMessage(workerIndex: number, message: any, appState: State) {
     const { state, payload } = message;
 
     switch (state) {
       case "fulfilled":
-        await RedisPaymentsService.push(payload);
+        this.setResultState(appState, payload);
         break;
       case "rejected":
         this.queue[this.tail++] = payload;
@@ -98,6 +102,20 @@ export class Queue {
 
     if (!this.isEmpty() && this.hasWorkersIdle()) {
       this.startWorker();
+    }
+  }
+
+  private setResultState(state: State, message: PaymentDataResponse) {
+    const amount = floatToCents(message.amount);
+    const requestedAt = new Date(message.requestedAt).getTime();
+
+    switch (message.paymentProcessor) {
+      case PaymentProcessor.Default:
+        state.default.push(amount, requestedAt);
+        break;
+      case PaymentProcessor.Fallback:
+        state.fallback.push(amount, requestedAt);
+        break;
     }
   }
 
