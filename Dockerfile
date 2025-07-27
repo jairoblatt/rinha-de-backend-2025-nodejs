@@ -23,4 +23,6 @@ COPY --from=builder /app/.env .env
 RUN chown -R www-data:www-data /tmp
 USER www-data
 
+ENV NODE_ENV production
+
 CMD ["node", "dist/main.js"]

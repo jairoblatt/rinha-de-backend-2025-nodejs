@@ -6,7 +6,7 @@ import type { ServerResponse, IncomingMessage } from "http";
 export function paymentsController(req: IncomingMessage, res: ServerResponse) {
   try {
     httpUtils.readBodyBufferCallback<QueueMessage>(req, (_, body) => {
-      body && queue.push(body);
+      body && queue.enqueue(body);
     });
 
     httpUtils.sendReponse(res, httpUtils.HttpStatus.OK);

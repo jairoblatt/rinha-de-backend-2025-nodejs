@@ -8,12 +8,13 @@ const DEFAULT_HEALTH_VALUES = {
   MIN_RESPONSE_TIME: 9999,
 } as const;
 
-function updateHealthCheckState(
-  appState: AppState,
-  healthData: CheckHealthResponse
-): void {
+function updateHealthCheckState(appState: AppState, healthData: CheckHealthResponse): void {
   appState.ppHealthDefault.failing = healthData.failing;
   appState.ppHealthDefault.minResponseTime = healthData.minResponseTime;
+}
+
+export async function updateFalling(appState: AppState, status: CheckHealthResponse) {
+  updateHealthCheckState(appState, status);
 }
 
 export async function checkAndUpdateDefault(appState: AppState): Promise<void> {

@@ -2,8 +2,8 @@ import { RedisPaymentsService } from "@/services/redis";
 import { PaymentProcessor } from "./paymentProcessor";
 
 interface PaymentSummary {
-  total_requests: number;
-  total_amount: number;
+  totalRequests: number;
+  totalAmount: number;
 }
 
 interface PaymentSummaryResponse {
@@ -14,12 +14,12 @@ interface PaymentSummaryResponse {
 export async function paymentSummaryService(from: string | null, to: string | null): Promise<PaymentSummaryResponse> {
   const paymentSummary: PaymentSummaryResponse = {
     default: {
-      total_requests: 0,
-      total_amount: 0,
+      totalRequests: 0,
+      totalAmount: 0,
     },
     fallback: {
-      total_requests: 0,
-      total_amount: 0,
+      totalRequests: 0,
+      totalAmount: 0,
     },
   };
 
@@ -41,8 +41,8 @@ export async function paymentSummaryService(from: string | null, to: string | nu
     const summary =
       item.paymentProcessor === PaymentProcessor.Default ? paymentSummary.default : paymentSummary.fallback;
 
-    summary.total_requests += 1;
-    summary.total_amount += item.amount;
+    summary.totalRequests += 1;
+    summary.totalAmount += item.amount;
   }
 
   return paymentSummary;
