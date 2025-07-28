@@ -59,9 +59,21 @@ async function processWithFallback(data: PaymentData) {
 export async function processPayment(data: any, shouldUseDefault: boolean) {
   const paymentData = createPaymentData(data);
 
-  return shouldUseDefault ? await processWithDefault(paymentData) : await processWithFallback(paymentData);
+  return await processWithDefault(paymentData);
+  // try {
+  //   const result = await processWithDefault(paymentData)
+  //   return result;
+  // } catch {
+
+  // }
+
+  // return shouldUseDefault ?  : await processWithFallback(paymentData);
 }
 
-export const paymentCircuitBreaker = new AdaptiveCircuitBreaker(processWithDefault, processWithFallback, {
-  adaptiveThreshold: 0.6,
-});
+export const paymentCircuitBreaker = new AdaptiveCircuitBreaker(
+  processWithDefault,
+  processWithFallback,
+  {
+    adaptiveThreshold: 0.6,
+  }
+);

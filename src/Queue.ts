@@ -91,8 +91,7 @@ export class Queue {
 
     switch (state) {
       case "fulfilled":
-        await RedisPaymentsService.push(payload);
-        // this.setResultState(appState, payload);
+        this.setResultState(appState, payload);
         break;
       case "rejected":
         this.queue[this.tail++] = payload;

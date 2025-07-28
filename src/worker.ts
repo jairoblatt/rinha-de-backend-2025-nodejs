@@ -1,21 +1,11 @@
 import { parentPort } from "node:worker_threads";
-import { paymentCircuitBreaker } from "./workers";
+import { paymentCircuitBreaker, processPayment } from "./workers";
 
-const responses = [
-  {
-    state: "fulfilled",
-    payload: null,
-  },
-  {
-    state: "rejected",
-    payload: null,
-  },
-];
 const port = parentPort!;
 
 port.on("message", async ({ payload }) => {
   try {
-    const result = await paymentCircuitBreaker.execute(payload);
+    const result = await processPayment(payload, true);
 
     port.postMessage({
       payload: result,

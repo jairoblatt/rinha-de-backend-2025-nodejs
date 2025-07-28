@@ -2,15 +2,21 @@ import undici from "undici";
 import { config } from "../../config/env";
 import type { PaymentSummaryResponse } from "./paymentSummary";
 
-export async function getForeignState(from: string | null, to: string | null): Promise<PaymentSummaryResponse> {
+export async function getForeignState(
+  from: string | null,
+  to: string | null
+): Promise<PaymentSummaryResponse> {
   try {
-    const { body } = await undici.request(`http://nginx:9999/${config.ForeignState}/payments-summary`, {
-      query: {
-        from,
-        to,
-        localOnly: "true",
-      },
-    });
+    const { body } = await undici.request(
+      `http://nginx:9999/${config.ForeignState}/payments-summary`,
+      {
+        query: {
+          from,
+          to,
+          localOnly: "true",
+        },
+      }
+    );
 
     const data = await body.json();
 

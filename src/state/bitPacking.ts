@@ -12,7 +12,7 @@ export class BitPackingPaymentStorage {
   }
 
   push(amount: number, currentTimestamp: string): void {
-    console.log("vaiii =>", currentTimestamp);
+    // console.log("vaiii =>", currentTimestamp);
     this.data.push({ amount, requestedAt: currentTimestamp });
     // const delta = currentTimestamp - this.startTimestamp;
 

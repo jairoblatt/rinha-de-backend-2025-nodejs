@@ -28,14 +28,14 @@ export async function paymentSummaryService(
     fallback: processState(stateFallback, fromTimestamp, toTimestamp),
   };
 
-  // if (!localOnly) {
-  //   const foreignState = await getForeignState(from, to);
-  //   paymentSummary.default.totalAmount += foreignState.default.totalAmount;
-  //   paymentSummary.default.totalRequests += foreignState.default.totalRequests;
+  if (!localOnly) {
+    const foreignState = await getForeignState(from, to);
+    paymentSummary.default.totalAmount += foreignState.default.totalAmount;
+    paymentSummary.default.totalRequests += foreignState.default.totalRequests;
 
-  //   paymentSummary.fallback.totalAmount += foreignState.fallback.totalAmount;
-  //   paymentSummary.fallback.totalRequests += foreignState.fallback.totalRequests;
-  // }
+    paymentSummary.fallback.totalAmount += foreignState.fallback.totalAmount;
+    paymentSummary.fallback.totalRequests += foreignState.fallback.totalRequests;
+  }
 
   return {
     default: {
