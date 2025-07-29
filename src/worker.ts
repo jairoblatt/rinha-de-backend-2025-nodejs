@@ -3,15 +3,15 @@ import { processPayment } from "./workers";
 
 const port = parentPort!;
 
-port.on("message", async ({ payload }) => {
+port.on("message", async ({ payload, isFireMotherFucker }) => {
   try {
-    const result = await processPayment(payload);
+    const result = await processPayment(payload, isFireMotherFucker);
 
     port.postMessage({
-      payload: result,
-      state: "fulfilled",
+      payload: result ? result : payload,
+      state: result ? "fulfilled" : "rejected",
     });
-  } catch (error) {
+  } catch {
     port.postMessage({
       payload,
       state: "rejected",

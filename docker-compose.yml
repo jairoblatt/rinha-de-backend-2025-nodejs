@@ -6,12 +6,11 @@ services:
     environment:
       - SOCKET_PATH=/tmp/api1.sock
       - FOREIGN_STATE=api2
+      # - MODE=🔥
     volumes:
       - rb2025:/tmp/
     networks:
       - payment-processor
-    depends_on:
-      - redis
     restart: unless-stopped
     deploy:
       resources:
@@ -26,12 +25,11 @@ services:
     environment:
       - SOCKET_PATH=/tmp/api2.sock
       - FOREIGN_STATE=api1
+      # - MODE=🔥
     volumes:
       - rb2025:/tmp/
     networks:
       - payment-processor
-    depends_on:
-      - redis
     restart: unless-stopped
     deploy:
       resources:

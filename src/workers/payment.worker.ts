@@ -35,6 +35,7 @@ async function processWithDefault(data: PaymentData) {
 
   if (statusCode !== 200) {
     req_count++;
+
     throw new Error("Default processor failed");
   }
 
@@ -58,13 +59,14 @@ async function processWithFallback(data: PaymentData) {
   };
 }
 
-export async function processPayment(data: any) {
+export async function processPayment(data: any, isFireMotherFucker: boolean) {
   const paymentData = createPaymentData(data);
+
   try {
     return await processWithDefault(paymentData);
   } catch {
-    if (req_count % 10 === 0) {
-      processWithFallback(paymentData);
+    if (req_count % 10 === 0 && !isFireMotherFucker) {
+      return await processWithFallback(paymentData);
     }
   }
 }

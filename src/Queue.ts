@@ -12,6 +12,7 @@ export interface QueueMessage {
 
 interface QueueOptions {
   workers?: number;
+  isFireMotherFucker?: boolean;
 }
 
 export class Queue {
@@ -82,6 +83,7 @@ export class Queue {
 
     this.workersFns[workerIndex]({
       payload: message,
+      isFireMotherFucker: this.queueOptions.isFireMotherFucker,
     });
   }
 
