@@ -1,0 +1,30 @@
+{
+  "name": "rinha-de-backend-2025-nodejs",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "scripts": {
+    "start:dev": "nodemon --watch src NODE_ENV=development ts-node -r tsconfig-paths/register src/main.ts",
+    "build": "tsc && tsc-alias"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "undici": "^7.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.15",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src"
+    ],
+    "ext": "ts",
+    "exec": "ts-node src/main.ts"
+  }
+}
