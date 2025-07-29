@@ -8,13 +8,11 @@ export function startServer(socketPath: string) {
     fs.unlinkSync(socketPath);
   }
 
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && req.url === "/payments") {
       paymentsController(req, res);
     } else if (req.method === "GET" && req.url?.startsWith("/payments-summary")) {
-      (async () => {
-        await paymentsSummaryController(req, res);
-      })();
+      await paymentsSummaryController(req, res);
     } else {
       httpUtils.sendReponse(res, 404);
     }

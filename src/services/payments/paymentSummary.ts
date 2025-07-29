@@ -71,8 +71,8 @@ function processState(
     }
 
     const isOutOfRange =
-      (fromTimestamp !== null && convertToTimeStamp(item.requestedAt)! < fromTimestamp) ||
-      (toTimestamp !== null && convertToTimeStamp(item.requestedAt)! > toTimestamp);
+      (fromTimestamp !== null && item.requestedAt < fromTimestamp) ||
+      (toTimestamp !== null && item.requestedAt > toTimestamp);
 
     if (isOutOfRange) {
       continue;

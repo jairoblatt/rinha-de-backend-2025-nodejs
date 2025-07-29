@@ -1,6 +1,5 @@
 import { resolve } from "node:path";
 import { Worker } from "node:worker_threads";
-import { RedisPaymentsService } from "@/services/redis";
 import { PaymentProcessor } from "@/services/payments/paymentProcessor";
 import { floatToCents } from "@/shared";
 import type { State } from "./state";
@@ -107,14 +106,14 @@ export class Queue {
 
   private setResultState(state: State, message: PaymentDataResponse) {
     const amount = floatToCents(message.amount);
-    // const requestedAt = new Date(message.requestedAt).getTime();
+    const timestamp = new Date(message.requestedAt).getTime();
 
     switch (message.paymentProcessor) {
       case PaymentProcessor.Default:
-        state.default.push(amount, message.requestedAt);
+        state.default.push(amount, timestamp);
         break;
       case PaymentProcessor.Fallback:
-        state.fallback.push(amount, message.requestedAt);
+        state.fallback.push(amount, timestamp);
         break;
     }
   }

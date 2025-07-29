@@ -3,7 +3,6 @@ import {
   paymentProcessorDefault,
   paymentProcessorFallback,
 } from "@/services/payments/paymentProcessor";
-import { AdaptiveCircuitBreaker } from "@/adaptiveCircuitBreaker";
 
 interface PaymentJobData {
   amount: number;
@@ -20,6 +19,8 @@ export interface PaymentDataResponse extends PaymentData {
   paymentProcessor: PaymentProcessor;
 }
 
+let req_count = 0;
+
 function createPaymentData(jobData: PaymentJobData) {
   return {
     amount: jobData.amount,
@@ -33,6 +34,7 @@ async function processWithDefault(data: PaymentData) {
   const { statusCode } = await paymentProcessorDefault.payment(_data);
 
   if (statusCode !== 200) {
+    req_count++;
     throw new Error("Default processor failed");
   }
 
@@ -56,24 +58,13 @@ async function processWithFallback(data: PaymentData) {
   };
 }
 
-export async function processPayment(data: any, shouldUseDefault: boolean) {
+export async function processPayment(data: any) {
   const paymentData = createPaymentData(data);
-
-  return await processWithDefault(paymentData);
-  // try {
-  //   const result = await processWithDefault(paymentData)
-  //   return result;
-  // } catch {
-
-  // }
-
-  // return shouldUseDefault ?  : await processWithFallback(paymentData);
-}
-
-export const paymentCircuitBreaker = new AdaptiveCircuitBreaker(
-  processWithDefault,
-  processWithFallback,
-  {
-    adaptiveThreshold: 0.6,
+  try {
+    return await processWithDefault(paymentData);
+  } catch {
+    if (req_count % 10 === 0) {
+      processWithFallback(paymentData);
+    }
   }
-);
+}
