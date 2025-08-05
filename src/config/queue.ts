@@ -1,8 +1,8 @@
 import { Queue } from "../Queue";
 import { config } from "./env";
-import state from "../state";
+import { storage } from "./storage";
 
-const queue = new Queue(state, {
+const queue = new Queue(storage, {
   workers: 1,
   isFireMotherFucker: config.isFireMotherFucker,
 });

@@ -5,8 +5,16 @@ import type { ServerResponse, IncomingMessage } from "http";
 
 export function paymentsController(req: IncomingMessage, res: ServerResponse) {
   try {
-    httpUtils.readBodyBufferCallback<QueueMessage>(req, (_, body) => {
-      body && queue.enqueue(body);
+    httpUtils.readBody<QueueMessage>(req).then((body) => {
+      if (!body) {
+        return;
+      }
+
+      if (body.amount <= 0 || !body.correlationId) {
+        return;
+      }
+
+      queue.enqueue(body);
     });
 
     httpUtils.sendReponse(res, httpUtils.HttpStatus.OK);

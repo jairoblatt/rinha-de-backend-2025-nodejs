@@ -11,8 +11,8 @@ export async function getForeignState(
       `http://nginx:9999/${config.ForeignState}/payments-summary`,
       {
         query: {
-          from,
-          to,
+          ...(from && { from }),
+          ...(to && { to }),
           localOnly: "true",
         },
       }
@@ -23,8 +23,14 @@ export async function getForeignState(
     return data as PaymentSummaryResponse;
   } catch {
     return {
-      default: { totalRequests: 0, totalAmount: 0 },
-      fallback: { totalRequests: 0, totalAmount: 0 },
+      default: {
+        totalRequests: 0,
+        totalAmount: 0,
+      },
+      fallback: {
+        totalRequests: 0,
+        totalAmount: 0,
+      },
     };
   }
 }

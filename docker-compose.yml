@@ -6,7 +6,7 @@ services:
     environment:
       - SOCKET_PATH=/tmp/api1.sock
       - FOREIGN_STATE=api2
-      # - MODE=🔥
+      - MODE=🔥
     volumes:
       - rb2025:/tmp/
     networks:
@@ -15,7 +15,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.65"
+          cpus: "0.6"
           memory: 155MB
 
   api2:
@@ -25,7 +25,7 @@ services:
     environment:
       - SOCKET_PATH=/tmp/api2.sock
       - FOREIGN_STATE=api1
-      # - MODE=🔥
+      - MODE=🔥
     volumes:
       - rb2025:/tmp/
     networks:
@@ -34,8 +34,21 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.65"
+          cpus: "0.6"
           memory: 155MB
+  map8x32:
+    image: map8x32
+    container_name: map8x32
+    volumes:
+      - rb2025:/tmp/
+    networks:
+      - payment-processor
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: 40MB
 
   nginx:
     image: nginx:latest
@@ -54,7 +67,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.2"
+          cpus: "0.3"
           memory: 40MB
 
 volumes:

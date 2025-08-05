@@ -17,7 +17,7 @@ export function startServer(socketPath: string) {
       paymentsController(req, res);
     } else if (req.method === "GET" && req.url?.startsWith("/payments-summary")) {
       paymentsSummaryController(req, res);
-    } else if (req.method === "GET" && req.url === "/purge-payments") {
+    } else if (req.method === "POST" && req.url === "/purge-payments") {
       paymentPurgeController(req, res);
     } else {
       httpUtils.sendReponse(res, 404);

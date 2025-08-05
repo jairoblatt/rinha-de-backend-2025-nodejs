@@ -1,4 +1,4 @@
-import { request } from "undici";
+import { Pool } from "undici";
 
 interface ResponseBase<T> {
   statusCode: number;
@@ -21,32 +21,40 @@ export const enum PaymentProcessor {
   Fallback = 2,
 }
 
+const pools = {
+  [PaymentProcessor.Default]: new Pool("http://payment-processor-default:8080"),
+  [PaymentProcessor.Fallback]: new Pool("http://payment-processor-fallback:8080"),
+};
+
+async function prewarmPool(pool: Pool) {
+  await Promise.all(
+    Array.from({ length: 10 }).map(() =>
+      pool
+        .request({
+          path: "/payments/service-health",
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+        .catch(() => {})
+    )
+  );
+}
+
+prewarmPool(pools[PaymentProcessor.Default]);
+prewarmPool(pools[PaymentProcessor.Fallback]);
+
 function paymentProcessorService(paymentProcessor: PaymentProcessor) {
   const defaultHeaders = {
     "Content-Type": "application/json",
   };
 
-  const baseUrl = {
-    [PaymentProcessor.Default]: "http://payment-processor-default:8080",
-    [PaymentProcessor.Fallback]: "http://payment-processor-fallback:8080",
-  }[paymentProcessor];
-
-  const checkHealth = async (): Promise<ResponseBase<CheckHealthResponse>> => {
-    const { body, statusCode } = await request(`${baseUrl}/payments/service-health`, {
-      method: "GET",
-      headers: defaultHeaders,
-    });
-
-    const resp = await body.json();
-
-    return {
-      statusCode,
-      data: resp as CheckHealthResponse,
-    };
-  };
+  const pool = pools[paymentProcessor];
 
   const payment = async (data: PaymentData): Promise<ResponseBase<null>> => {
-    const { statusCode } = await request(`${baseUrl}/payments`, {
+    const { statusCode } = await pool.request({
+      path: "/payments",
       method: "POST",
       body: JSON.stringify(data),
       headers: defaultHeaders,
@@ -60,7 +68,6 @@ function paymentProcessorService(paymentProcessor: PaymentProcessor) {
 
   return {
     payment,
-    checkHealth,
   };
 }
 

@@ -1,6 +1,5 @@
 import { centsToFloat } from "@/shared";
-import state, { type StorageEntry } from "@/state";
-import { getForeignState } from "./ForeignState";
+import { PaymentStorage, Storage, StorageEntry } from "@/services/storage";
 
 interface PaymentSummary {
   totalRequests: number;
@@ -15,10 +14,10 @@ export interface PaymentSummaryResponse {
 export async function paymentSummaryService(
   from: string | null,
   to: string | null,
-  localOnly: boolean
+  storage: Storage
 ): Promise<PaymentSummaryResponse> {
-  const stateDefault = state.default.list();
-  const stateFallback = state.fallback.list();
+  const stateDefault = await storage.list(PaymentStorage.Default);
+  const stateFallback = await storage.list(PaymentStorage.Fallback);
 
   const toTimestamp = convertToTimeStamp(to);
   const fromTimestamp = convertToTimeStamp(from);
@@ -27,15 +26,6 @@ export async function paymentSummaryService(
     default: processState(stateDefault, fromTimestamp, toTimestamp),
     fallback: processState(stateFallback, fromTimestamp, toTimestamp),
   };
-
-  if (!localOnly) {
-    const foreignState = await getForeignState(from, to);
-    paymentSummary.default.totalAmount += foreignState.default.totalAmount;
-    paymentSummary.default.totalRequests += foreignState.default.totalRequests;
-
-    paymentSummary.fallback.totalAmount += foreignState.fallback.totalAmount;
-    paymentSummary.fallback.totalRequests += foreignState.fallback.totalRequests;
-  }
 
   return {
     default: {

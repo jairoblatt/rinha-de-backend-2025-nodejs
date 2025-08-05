@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { Worker } from "node:worker_threads";
 import { PaymentProcessor } from "@/services/payments/paymentProcessor";
 import { floatToCents } from "@/shared";
-import type { State } from "./state";
+import { Storage, PaymentStorage } from "@/services";
 import type { PaymentDataResponse } from "./workers/payment.worker";
 
 export interface QueueMessage {
@@ -15,6 +15,11 @@ interface QueueOptions {
   isFireMotherFucker?: boolean;
 }
 
+interface WorkerMessage {
+  state: "fulfilled" | "rejected";
+  payload: PaymentDataResponse | QueueMessage;
+}
+
 export class Queue {
   private readonly queue: QueueMessage[] = [];
   private head: number = 0;
@@ -22,16 +27,20 @@ export class Queue {
   private readonly workersFns: ((message: any) => void)[] = [];
   private readonly workersIdle: number[] = [];
 
-  constructor(readonly state: State, readonly queueOptions: QueueOptions) {
+  constructor(private readonly storage: Storage, readonly queueOptions: QueueOptions) {
     const isFileTs = __filename.endsWith(".ts");
-    const workerPath = resolve(__dirname, isFileTs ? "worker.ts" : "worker.js");
+    const workerPath = resolve(__dirname, isFileTs ? "workers/payment.ts" : "workers/payment.js");
 
     for (let i = 0; i < (queueOptions.workers ?? 1); i++) {
-      const worker = new Worker(workerPath);
+      const worker = new Worker(workerPath, {
+        workerData: {
+          isFireMotherFucker: queueOptions.isFireMotherFucker,
+        },
+      });
       this.workersIdle.push(i);
       this.workersFns.push((message) => worker.postMessage(message));
 
-      worker.on("message", (message) => this.onWorkerMessage(i, message, state));
+      worker.on("message", (message) => this.onWorkerMessage(i, message));
     }
   }
 
@@ -52,10 +61,6 @@ export class Queue {
     delete this.queue[this.head];
     this.head++;
 
-    if (this.head > 1000 && this.head >= this.tail) {
-      this.reset();
-    }
-
     return message;
   }
 
@@ -69,7 +74,7 @@ export class Queue {
     return this.head >= this.tail;
   }
 
-  private startWorker() {
+  private startWorker(): void {
     const message = this.dequeue();
     if (!message) {
       return;
@@ -81,21 +86,18 @@ export class Queue {
       return;
     }
 
-    this.workersFns[workerIndex]({
-      payload: message,
-      isFireMotherFucker: this.queueOptions.isFireMotherFucker,
-    });
+    this.workersFns[workerIndex](message);
   }
 
-  private async onWorkerMessage(workerIndex: number, message: any, appState: State) {
+  private async onWorkerMessage(workerIndex: number, message: any) {
     const { state, payload } = message;
 
     switch (state) {
       case "fulfilled":
-        this.setResultState(appState, payload);
+        await this.setResultState(payload);
         break;
       case "rejected":
-        this.queue[this.tail++] = payload;
+        this.queue[this.tail++] = payload as QueueMessage;
         break;
     }
 
@@ -106,21 +108,23 @@ export class Queue {
     }
   }
 
-  private setResultState(state: State, message: PaymentDataResponse) {
-    const amount = floatToCents(message.amount);
-    const timestamp = new Date(message.requestedAt).getTime();
+  private async setResultState(message: PaymentDataResponse) {
+    const entry = {
+      amount: floatToCents(message.amount),
+      requestedAt: new Date(message.requestedAt).getTime(),
+    };
 
     switch (message.paymentProcessor) {
       case PaymentProcessor.Default:
-        state.default.push(amount, timestamp);
+        await this.storage.push(PaymentStorage.Default, entry);
         break;
       case PaymentProcessor.Fallback:
-        state.fallback.push(amount, timestamp);
+        await this.storage.push(PaymentStorage.Fallback, entry);
         break;
     }
   }
 
-  private hasWorkersIdle() {
+  private hasWorkersIdle(): boolean {
     return this.workersIdle.length > 0;
   }
 }
