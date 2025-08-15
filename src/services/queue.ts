@@ -1,9 +1,7 @@
 import { resolve } from "node:path";
 import { Worker } from "node:worker_threads";
-import { PaymentProcessor } from "@/services/payments/paymentProcessor";
-import { Storage, StorageEntity } from "@/storage";
-import { floatToCents } from "@/shared";
 import { PaymentDataResponse } from "@/workers/payment";
+import { databaseClient } from "@/config";
 
 export interface QueueMessage {
   amount: number;
@@ -22,15 +20,11 @@ export class Queue {
   private readonly workersFns: ((message: any) => void)[] = [];
   private readonly workersIdle: number[] = [];
 
-  constructor(
-    private readonly storageDefault: Storage,
-    private readonly storageFallback: Storage,
-    readonly queueOptions: QueueOptions
-  ) {
+  constructor(readonly queueOptions: QueueOptions) {
     const isFileTs = __filename.endsWith(".ts");
     const workerPath = resolve(
       __dirname,
-      isFileTs ? "../workers/payment.ts" : "../workers/payment.js"
+      isFileTs ? "../../dist/workers/payment.js" : "../workers/payment.js"
     );
 
     for (let i = 0; i < (queueOptions.workers ?? 1); i++) {
@@ -104,22 +98,12 @@ export class Queue {
     }
   }
 
-  private setStorageEntry(message: PaymentDataResponse) {
-    const entity: StorageEntity = {
-      amount: floatToCents(message.amount),
-      requestedAt: new Date(message.requestedAt).getTime(),
-    };
-
-    switch (message.paymentProcessor) {
-      case PaymentProcessor.Default:
-        this.storageDefault.push(entity.amount, entity.requestedAt);
-        break;
-      case PaymentProcessor.Fallback:
-        this.storageFallback.push(entity.amount, entity.requestedAt);
-        break;
-      default:
-        throw new Error(`Unknown payment processor: ${message.paymentProcessor}`);
-    }
+  private async setStorageEntry(message: PaymentDataResponse) {
+    await databaseClient.set(message.correlationId, {
+      amount: message.amount,
+      requestedAt: message.requestedAt,
+      paymentProcessor: message.paymentProcessor,
+    });
   }
 
   private hasWorkersIdle(): boolean {

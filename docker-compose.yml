@@ -11,12 +11,14 @@ services:
       - rb2025:/tmp/
     networks:
       - payment-processor
+    depends_on:
+      - beercache
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 150MB
+          cpus: "0.45"
+          memory: 145MB
 
   api2:
     build: .
@@ -30,12 +32,28 @@ services:
       - rb2025:/tmp/
     networks:
       - payment-processor
+    depends_on:
+      - beercache
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 150MB
+          cpus: "0.45"
+          memory: 145MB
+
+  beercache:
+    image: beercache
+    container_name: beercache
+    volumes:
+      - rb2025:/tmp/
+    networks:
+      - payment-processor
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 20MB
 
   uxlb:
     image: jrblatt/uxlb
@@ -57,8 +75,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 50MB
+          cpus: "0.4"
+          memory: 40MB
 
 volumes:
   rb2025:

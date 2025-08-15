@@ -1,6 +1,5 @@
 import { httpUtils } from "@/shared";
 import { paymentSummaryService } from "@/services";
-import { storageDefault, storageFallback, config } from "@/config";
 import type { ServerResponse, IncomingMessage } from "http";
 
 interface PaymentSummaryQuery {
@@ -11,13 +10,8 @@ interface PaymentSummaryQuery {
 export async function paymentsSummaryController(req: IncomingMessage, res: ServerResponse) {
   try {
     const { to, from } = (httpUtils.readQueryParams(req) || {}) as unknown as PaymentSummaryQuery;
-    const result = await paymentSummaryService({
-      from,
-      to,
-      storageDefault,
-      storageFallback,
-      externalSummaryHostname: config.ExternalSummaryHostname,
-    });
+
+    const result = await paymentSummaryService(from, to);
 
     httpUtils.sendResponse(res, httpUtils.HttpStatus.OK, result);
   } catch {

@@ -5,7 +5,6 @@ import {
   paymentsController,
   paymentPurgeController,
   paymentsSummaryController,
-  paymentSummaryInternalController,
 } from "@/controllers";
 
 export function startServer(hostname: string) {
@@ -22,8 +21,6 @@ export function startServer(hostname: string) {
       paymentsController(req, res);
     } else if (method === "GET" && url?.includes("/payments-summary")) {
       paymentsSummaryController(req, res);
-    } else if (method === "GET" && url?.includes("/internal-payments-summary")) {
-      paymentSummaryInternalController(req, res);
     } else if (method === "POST" && url === "/purge-payments") {
       paymentPurgeController(req, res);
     } else {
