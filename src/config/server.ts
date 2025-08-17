@@ -14,11 +14,11 @@ export function startServer(hostname: string) {
     fs.unlinkSync(socketPath);
   }
 
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
     const { method, url } = req;
 
     if (method === "POST" && url === "/payments") {
-      paymentsController(req, res);
+      await paymentsController(req, res);
     } else if (method === "GET" && url?.includes("/payments-summary")) {
       paymentsSummaryController(req, res);
     } else if (method === "POST" && url === "/purge-payments") {

@@ -11,6 +11,7 @@ export interface QueueMessage {
 interface QueueOptions {
   workers?: number;
   isFireMotherFucker?: boolean;
+  fallbackInterval: number;
 }
 
 export class Queue {
@@ -31,6 +32,7 @@ export class Queue {
       const worker = new Worker(workerPath, {
         workerData: {
           isFireMotherFucker: queueOptions.isFireMotherFucker,
+          fallbackInterval: queueOptions.fallbackInterval,
         },
       });
       this.workersIdle.push(i);

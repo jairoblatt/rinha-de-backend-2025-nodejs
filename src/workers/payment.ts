@@ -25,7 +25,7 @@ let req_count = 0;
 const port = parentPort!;
 
 port.on("message", (payload) => {
-  processPayment(payload, workerData.isFireMotherFucker)
+  processPayment(payload, workerData.isFireMotherFucker, workerData.fallbackInterval)
     .then((result) => {
       if (!result) {
         port.postMessage({
@@ -88,11 +88,15 @@ function createPaymentData(data: PaymentJobData) {
   };
 }
 
-export async function processPayment(data: any, isFireMotherFucker: boolean) {
+export async function processPayment(
+  data: any,
+  isFireMotherFucker: boolean,
+  fallbackInterval: number
+) {
   try {
     return await processWithDefault(data);
   } catch {
-    if (req_count % 10 === 0 && !isFireMotherFucker) {
+    if (req_count % fallbackInterval === 0 && !isFireMotherFucker) {
       return await processWithFallback(data);
     }
   }

@@ -1,17 +1,25 @@
 import { httpUtils } from "@/shared";
-import { queue } from "../config/index";
+import { databaseClient, queue } from "../config";
 import type { QueueMessage } from "@/services";
 import type { ServerResponse, IncomingMessage } from "http";
 
-export function paymentsController(req: IncomingMessage, res: ServerResponse) {
+export async function paymentsController(req: IncomingMessage, res: ServerResponse) {
   try {
-    httpUtils.readBody<QueueMessage>(req).then((body) => {
-      if ((body?.amount ?? 0) < 0 || !body?.correlationId) {
-        return;
-      }
+    const body = await httpUtils.readBody<QueueMessage>(req);
 
-      queue.enqueue(body);
-    });
+    if ((body?.amount ?? 0) < 0 || !body?.correlationId) {
+      httpUtils.sendResponse(res, httpUtils.HttpStatus.NOT_FOUND);
+      return;
+    }
+
+    const data = await databaseClient.get(body.correlationId);
+
+    if (data) {
+      httpUtils.sendResponse(res, httpUtils.HttpStatus.CONFLICT);
+      return;
+    }
+
+    queue.enqueue(body);
 
     httpUtils.sendResponse(res, httpUtils.HttpStatus.OK);
   } catch {
